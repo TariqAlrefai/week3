@@ -234,12 +234,37 @@ const genEcdhSharedKey = async ({
  * @return The ciphertext.
  */
 const encrypt = async (
+  
   plaintext: Plaintext,
   sharedKey: EcdhSharedKey,
 ): Promise<Ciphertext> => {
-  const mimc7 = await buildMimc7();
+
   // [assignment] generate the IV, use Mimc7 to hash the shared key with the IV, then encrypt the plain text
-};
+     const mimc7 = await buildMimc7();
+
+     let b
+     let c 
+     let arr : Array<String> = new Array(32);
+
+     const iiv = mimc7.multiHash(plaintext, BigInt(0))
+     iiv.map((x,i) => arr[i] = x.toString(16).padStart(2, '0'));
+     const iv:bigint = BigInt(`0x${arr.join('')}`);
+
+     const ciphertext: Ciphertext = {
+         iv,
+         data: plaintext.map((e: bigint, i: number): bigint => {
+          
+          b = mimc7.hash(sharedKey, iv + BigInt(i));
+          b.map((x,i) => arr[i] = x.toString(16).padStart(2, '0'));
+          c = BigInt(`0x${arr.join('')}`);
+          return e + c;
+         }),
+      }
+      console.log(ciphertext,iv)
+      return ciphertext;
+}
+
+
 
 /*
  * Decrypts a ciphertext using a given key.
@@ -250,6 +275,27 @@ const decrypt = async (
   sharedKey: EcdhSharedKey,
 ): Promise<Plaintext> => {
   // [assignment] use Mimc7 to hash the shared key with the IV, then descrypt the ciphertext
+  
+  const mimc7 = await buildMimc7();
+  let b
+  let c 
+  let arr : Array<String> = new Array(32);
+
+  console.log(ciphertext,ciphertext.iv)
+
+  const plaintext: Plaintext = ciphertext.data.map(
+    (e: bigint, i: number): bigint => {
+
+      b = mimc7.hash(sharedKey, ciphertext.iv + BigInt(i));
+      b.map((x,i) => arr[i] = x.toString(16).padStart(2, '0'));
+      c = BigInt(`0x${arr.join('')}`);
+
+      return e - c
+    }
+    
+)
+
+return plaintext
 };
 
 export {
